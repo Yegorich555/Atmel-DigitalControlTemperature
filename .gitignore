@@ -5,6 +5,7 @@
 [Rr]eleases/
 [Bb]in/
 [Oo]bj/
+[Ee]xe/
 
 # Visual Studio cache/options directory
 .vs/
@@ -15,4 +16,6 @@
 
 /stdiodemo
 *_old/
+*-old/
 
+/docs

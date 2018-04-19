@@ -1,0 +1,26 @@
+RAM Allocation
+Variable                                                          Address   Size
+--------------------------------------------------------------------------------
+NumPort                                                           0x0160       2
+dNumPort                                                          0x0162       2
+buf                                                               0x0164       6
+i                                                                 0x016A       2
+m                                                                 0x016C      32
+rx_buffer                                                         0x018C       8
+rx_rd_index                                                       0x0194       1
+rx_counter                                                        0x0195       1
+
+EEPROM Allocation
+Variable                                                          Address   Size
+--------------------------------------------------------------------------------
+
+Register Allocation
+Variable                                                          Register  Size
+--------------------------------------------------------------------------------
+n                                                                 R4,R5        2
+symb                                                              R7           1
+N1                                                                R8,R9        2
+Status                                                            R10,R11      2
+Command                                                           R12,R13      2
+rx_wr_index                                                       R6           1
+rx_buffer_overflow                                                R2.0      1bit
