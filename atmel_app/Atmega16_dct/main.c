@@ -68,7 +68,7 @@ int16_t dht22_t;
 //***************** soft uart
 #define USOFT_BAUD 4800
 #define USOFT_BUFFER_EN false
-#define USOFT_AUTOLISTEN true
+//#define USOFT_AUTOLISTEN true	 //todo implement autolisten
 //#define USOFT_TXEN false
 #define USOFT_IO_RX C, 1
 #define USOFT_IO_TX C, 0
@@ -117,29 +117,9 @@ unsigned char get_x(char *str, unsigned char startX)
 	return startX - countChar;
 }
 
-void waitCmd()
+void checkCmd()
 {
-	usoft_listen();
-	utb_cmd_e _cmd = utb_getCmd();
-
-	#pragma GCC diagnostic ignored "-Wswitch"
-	switch (_cmd)
-	{
-		case none:
-		break;
-		case set_clock:
-		sens_ds1307_setTime(rtcTime);
-		break;
-
-		//case change_out:
-		//
-		//break;
-		//
-		//case change_outs:
-		//
-		//break;
-	}
-	#pragma GCC diagnostic warning  "-Wswitch"
+	utb_getCmd();
 }
 
 uint8_t bt;
@@ -156,14 +136,14 @@ int main(void)
 	if (lcd_init())
 	{
 		lcd_goto_xy(2,0);  lcd_putStringf("day");
-		//Ulica
+		//Outdoor
 		lcd_goto_xy(0,1);  lcd_putStringf("Ul");
 		//Room
 		lcd_goto_xy(0,2); lcd_putStringf("Kom");
 		lcd_goto_xy(14,2); lcd_putStringf("RH=");
-		//Balkon
+		//Balcony
 		lcd_goto_xy(0,3); lcd_putStringf("Bln");
-		//Pogreb
+		//Cellar
 		lcd_goto_xy(11,3); lcd_putStringf("Pgb");
 	}
 	
@@ -178,38 +158,12 @@ int main(void)
 	sens[4] = &dht22_hum;
 	utb_init2(&rtcTime, &portVal, sens, 5);
 
+	uint8_t count = 0;
+	
 	while (1)
 	{
 		clocky();
 
-		/*******************************************************************
-		humidity
-		********************************************************************/
-		if (sens_dht22_read(&dht22_hum, &dht22_t))
-		{
-			//Humidity
-			sprintf(lcd_buffer,"%d%%",dht22_hum / 10); //DHT22
-			lcd_goto_xy(HumRoom_X,HumRoom_Y); lcd_putStringf("   ");
-			lcd_goto_xy(HumRoom_X,HumRoom_Y); lcd_putString((unsigned char *)lcd_buffer); //lcd_putChar('%');
-			
-			//Temperature
-			sprintf(lcd_buffer,"%d.%d",dht22_t / 10, dht22_t % 10); //DHT22
-			lcd_goto_xy(TRoom_X - 5, TRoom_Y); lcd_putStringf("     ");
-			lcd_goto_xy(get_x(lcd_buffer,TRoom_X),TRoom_Y); lcd_putString((unsigned char *)lcd_buffer);
-		}
-		/*******************************************************************
-		temperature
-		********************************************************************/
-		if (sens_ds1820_readByRom(ds18b20_t, ds18b20_rom_codes))
-		{
-			for (uint8_t i = 0; i < SENS_DS18B20_NUM; ++i)
-			{
-				char sign = (ds18b20_t[i] < 0) ? '-' : ' ';
-				sprintf(lcd_buffer, "%c%d.%d",sign, abs(ds18b20_t[i])/10, abs(ds18b20_t[i]) % 10);
-				lcd_goto_xy(Ts_X[i] - 5,Ts_Y[i]); lcd_putStringf("    ");
-				lcd_goto_xy(get_x(lcd_buffer, Ts_X[i]), Ts_Y[i]); lcd_putString((unsigned char *)lcd_buffer);
-			}
-		}
 		/*******************************************************************
 		led light
 		********************************************************************/
@@ -222,7 +176,45 @@ int main(void)
 			io_setPort(IO_LedLcd);
 		}
 
-		waitCmd();
+		if (count == 0 || count > 20)//period for long-time requests
+		{
+			count = 0;
+			/*******************************************************************
+			humidity
+			********************************************************************/
+			if (sens_dht22_read(&dht22_hum, &dht22_t))
+			{
+				//Humidity
+				sprintf(lcd_buffer,"%d%%",dht22_hum / 10); //DHT22
+				lcd_goto_xy(HumRoom_X,HumRoom_Y); lcd_putStringf("   ");
+				lcd_goto_xy(HumRoom_X,HumRoom_Y); lcd_putString((unsigned char *)lcd_buffer); //lcd_putChar('%');
+				
+				//Temperature
+				sprintf(lcd_buffer,"%d.%d",dht22_t / 10, dht22_t % 10); //DHT22
+				lcd_goto_xy(TRoom_X - 5, TRoom_Y); lcd_putStringf("     ");
+				lcd_goto_xy(get_x(lcd_buffer,TRoom_X),TRoom_Y); lcd_putString((unsigned char *)lcd_buffer);
+			}
+			/*******************************************************************
+			temperature
+			********************************************************************/
+			if (sens_ds1820_readByRom(ds18b20_t, ds18b20_rom_codes))
+			{
+				for (uint8_t i = 0; i < SENS_DS18B20_NUM; ++i)
+				{
+					char sign = (ds18b20_t[i] < 0) ? '-' : ' ';
+					sprintf(lcd_buffer, "%c%d.%d",sign, abs(ds18b20_t[i])/10, abs(ds18b20_t[i]) % 10);
+					lcd_goto_xy(Ts_X[i] - 5,Ts_Y[i]); lcd_putStringf("    ");
+					lcd_goto_xy(get_x(lcd_buffer, Ts_X[i]), Ts_Y[i]); lcd_putString((unsigned char *)lcd_buffer);
+				}
+			}
+		}
+		else
+		{
+			delay_ms(100);
+		}
+
+		checkCmd();
+		++count;
 	}
 }
 
