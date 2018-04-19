@@ -162,7 +162,10 @@ int main(void)
 	
 	while (1)
 	{
-		clocky();
+		if (count == 0 || count & 1) //0 or odd (decrease clocky freq in 2)
+		{
+			clocky();
+		}
 
 		/*******************************************************************
 		led light
